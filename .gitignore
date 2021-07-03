@@ -142,3 +142,4 @@ cython_debug/
 *.csv
 save_*/
 outputs/
+data/
