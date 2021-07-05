@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-#from torch.optim import lr_scheduler
+from torch.optim.lr_scheduler import StepLR
 import numpy as np
 from torch.utils import data
 from torchvision import datasets
@@ -18,23 +18,40 @@ import matplotlib.pyplot as plt
 
 print("Executing")
 
-device = 'cpu'
+device = 'cuda'
 
-class TwoLayerMLP(nn.Module):
-    
-    def __init__(self, d_in, d_hidden, d_out):
-        super(TwoLayerMLP, self).__init__()
-        self.d_in = d_in
+def integer_sqrt(n):
+    x = n
+    y = (x + 1) // 2
+    while y < x:
+        x = y
+        y = (x + n // x) // 2
+    return x
 
-        self.linear1 = nn.Linear(d_in, d_hidden)
-        self.linear2 = nn.Linear(d_hidden, d_hidden)
-        self.linear3 = nn.Linear(d_hidden, d_out)
+class CNNet(nn.Module):
+    def __init__(self):
+        super(CNNet, self).__init__()
+        self.conv1 = nn.Conv2d(1, 32, 3, 1)
+        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.dropout1 = nn.Dropout(0.25)
+        self.dropout2 = nn.Dropout(0.5)
+        self.fc1 = nn.Linear(9216, 128)
+        self.fc2 = nn.Linear(128, 10)
 
-    def forward(self, X):
-        X = X.view(-1, self.d_in)
-        X = self.linear1(X)
-        X = self.linear2(X)
-        return F.log_softmax(self.linear3(X), dim=1)
+    def forward(self, x):
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout1(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout2(x)
+        x = self.fc2(x)
+        output = F.log_softmax(x, dim=1)
+        return output
 
 def load_mnist(batch_size_train, batch_size_test):
     
@@ -57,9 +74,21 @@ def load_mnist(batch_size_train, batch_size_test):
 def show_data_label_prediction(data, y_true, y_pred=None, shape=(2, 3)):
     y_pred = [None] * len(y_true) if y_pred is None else y_pred
     fig = plt.figure()
-    for i in range(np.prod(shape)):
+
+    rows = integer_sqrt(len(data))
+    cols = len(data)//rows
+    remains = len(data) % rows
+    if np.prod((rows, cols)) < np.prod(shape):
+        shape  = (rows+1, cols)
+        nb_plot = np.prod((rows, cols))+remains
+    else:
+        nb_plot = np.prod(shape)
+
+    for i in range(nb_plot):
         plt.subplot(*shape, i+1)
         plt.tight_layout()
+        print("---------------------------------")
+        print(i, data.shape)
         plt.imshow(data[i][0], cmap='gray', interpolation='none')
         plt.title("True: {} Pred: {}".format(y_true[i], y_pred[i]))
         plt.xticks([])
@@ -147,7 +176,7 @@ def train_val_model(model, criterion, optimizer, dataloaders, num_epochs=25,
 
     return model, losses, accuracies
 
-train_loader, val_loader = load_mnist(64, 10000)
+train_loader, val_loader = load_mnist(16, 32)
 
 dataloaders = dict(train=train_loader, val=val_loader)
 
@@ -162,11 +191,10 @@ print("Train batch:", example_data.shape, example_targets.shape)
 batch_idx, (example_data, example_targets) = next(enumerate(val_loader))
 print("Val batch:", example_data.shape, example_targets.shape)
 
-show_data_label_prediction(data=example_data, y_true=example_targets, y_pred=None, shape=(2, 3))
+#show_data_label_prediction(data=example_data, y_true=example_targets, y_pred=None, shape=(2, 3))
 
-model = TwoLayerMLP(D_in, 50, D_out).to(device)
-print(next(model.parameters()).is_cuda)
-optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+model = CNNet().to(device)
+optimizer = optim.Adadelta(model.parameters(), lr=0.01)
 criterion = nn.NLLLoss()
 
 # Explore the model
@@ -176,7 +204,7 @@ for parameter in model.parameters():
 print("Total number of parameters =", np.sum([np.prod(parameter.shape) for parameter in model.parameters()]))
 
 model, losses, accuracies = train_val_model(model, criterion, optimizer, dataloaders,
-                       num_epochs=2, log_interval=1)
+                       num_epochs=1, log_interval=1)
 
 if not os.path.exists('outputs'):
     os.mkdir("outputs")
@@ -195,6 +223,7 @@ example_data = example_data.cpu()
 # Softmax predictions
 preds = output.argmax(dim=1)
 
+print("+++++++++++++++++++++++++++")
 print("Output shape=", output.shape, "label shape=", preds.shape)
 print("Accuracy = {:.2f}%".format((example_targets == preds).sum().item() * 100. / len(example_targets)))
 
@@ -205,7 +234,13 @@ errors = example_targets != preds
 #print(errors, np.where(errors))
 print(f"Nb errors = {errors.sum()}, (Error rate = {100 * errors.sum().item() / len(errors)}%)")
 err_idx = np.where(errors)[0]
-show_data_label_prediction(data=example_data[err_idx], y_true=example_targets[err_idx],
-                           y_pred=preds[err_idx], shape=(3, 4))
+
+
+
+if len(err_idx) > 0:
+    show_data_label_prediction(data=example_data[err_idx], y_true=example_targets[err_idx],
+                               y_pred=preds[err_idx], shape=(3, 4))
+else:
+    print("Not enough errors to display")
 
 print("Done")
