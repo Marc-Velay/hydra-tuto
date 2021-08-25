@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - models: MLP
+  - hyperparameters: MLP_HP
+
+
+
+

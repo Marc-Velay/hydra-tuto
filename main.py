@@ -5,7 +5,7 @@ os.environ['HYDRA_FULL_ERROR'] = '1'
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from utils.builders import build_model
+#from utils.builders import build_model
 
 """
  Usage: 
@@ -13,11 +13,11 @@ from utils.builders import build_model
     python run_experiments.py -cp <yaml path> -cn <yaml filename> for custom config
     python run_experiments.py -cp ./configs/singleSin -cn sac
 """
-@hydra.main(config_path='./configs')
+@hydra.main(config_path='configs', config_name="config")
 def runExperiment(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
-    model = build_model(**cfg)
-    model.train()
+    #model = build_model(**cfg)
+    #model.train()
 
 if __name__ == "__main__":
     runExperiment()

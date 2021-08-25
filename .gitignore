@@ -142,4 +142,5 @@ cython_debug/
 *.csv
 save_*/
 outputs/
+multirun/
 data/
