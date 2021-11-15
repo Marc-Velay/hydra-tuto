@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.base import BaseModel
+from compute_models.base import BaseModel
 
 
 class CategoricalClassifier(BaseModel):

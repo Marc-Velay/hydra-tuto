@@ -1,7 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
-
-import numpy as np
 
 class Dataset(ABC):
     @abstractmethod
@@ -9,13 +6,7 @@ class Dataset(ABC):
         pass
 
     @abstractmethod
-    def close(self):
-        pass
-
-    @abstractmethod
-    def step(
-        self, state: np.ndarray, action: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.float64, bool]:
+    def get_loader(self):
         pass
 
     @abstractmethod

@@ -1,0 +1,32 @@
+# @package _global_
+model:
+  MLP:
+    _target_: compute_models.MLP_classifier.MLP_Classifier
+    model_cfg:
+      fc:
+        input:
+          _target_: models.layers.LinearLayer
+          input_size: undefined
+          output_size: 64
+          post_activation_fn: sigmoid           
+        hidden:
+          hidden1:
+            _target_: models.layers.LinearLayer
+            input_size: 64
+            output_size: 64
+            post_activation_fn: sigmoid
+          hidden2:
+            _target_: models.layers.LinearLayer
+            input_size: 16
+            output_size: 16
+            post_activation_fn: sigmoid
+        output:
+          _target_: models.layers.LinearLayer
+          input_size: 16
+          output_size: 10
+          post_activation_fn: identity
+          init_w: 0.003
+  
+  load_model: False
+  load_path: ""
+  inference: False

@@ -1,0 +1,28 @@
+experiment_info:
+  # Main algorithm choices
+  experiment_name: MLP_MNIST
+  model: models.MLP.MLP.MLP
+  learner: models.MLP.classifier.CategoricalClassifier
+  classification_loss: models.MLP.loss.CategoricalLoss
+  class_selector: models.MLP.class_selector.BayesClassSelector
+  device: gpu
+  log_exp: True
+
+  # Environment info
+  env:
+    _target_: environments.MNIST.MNIST
+    args:
+      train_batch_size: 16
+      test_batch_size: 16
+
+  # Experiment default arguments:
+  total_iter: 100
+  test_interval: 10  # Test every N episodes
+  test_num: 3  # Number of episodes to test during test phase
+  render_train: False
+  render_test: False
+  train_model: True
+
+defaults:
+  - hyperparameters: default_mlp
+  - models: MLP_model

@@ -3,24 +3,33 @@ from omegaconf import DictConfig
 
 from datetime import datetime
 
-from models.base import BaseModel
-
+from utils.abstracts.class_selector import ClassSelector
+from utils.abstracts.learner import LearnerBase
+from utils.abstracts.loss import Loss
+from compute_models.base import BaseModel
 
 
 def build_model(
-    experiment_info: DictConfig, hyper_params: DictConfig, architecture: DictConfig
+     time_info, experiment_info: DictConfig, hyper_params: DictConfig, model: DictConfig
 ):
-    """Build agent from DictConfigs via hydra.utils.instantiate()"""
+    """Build model from DictConfigs via hydra.utils.instantiate()"""
     model_cfg = DictConfig(dict())
-    model_cfg["_target_"] = experiment_info.agent
+    model_cfg["_target_"] = experiment_info.model
     model_cfg["experiment_info"] = experiment_info
-    time_info = datetime.now()
-    model_cfg["experiment_info"].time_info = time_info.strftime("%Y-%m-%d/%H-%M-%S/")
+    model_cfg["experiment_info"].time_info = time_info
     model_cfg["hyper_params"] = hyper_params
-    model_cfg["archi_cfg"] = architecture
-    agent = hydra.utils.instantiate(model_cfg)
-    print("Model built!")
-    return agent
+    model_cfg["model_cfg"] = model
+    model = hydra.utils.instantiate(model_cfg)
+    return model
+
+def build_compute_model(model_cfg: DictConfig, use_cuda: bool) -> BaseModel:
+    """Build model from DictConfigs via hydra.utils.instantiate()"""
+    model_cfg.model_cfg.use_cuda = use_cuda
+    model = hydra.utils.instantiate(model_cfg)
+    if use_cuda:
+        return model.cuda()
+    else:
+        return model.cpu()
 
 
 def build_learner(
@@ -36,3 +45,15 @@ def build_learner(
     if learner.model_cfg.load_model:
         learner.load_params(ckpt=learner.model_cfg.load_path, update_step=learner.model_cfg.update_step, inference=learner.model_cfg.inference)
     return learner
+
+def build_action_selector(
+    experiment_info: DictConfig, use_cuda: bool
+) -> ClassSelector:
+    """Build action selector from DictConfig via hydra.utils.instantiate()"""
+    class_selector_cfg = DictConfig(dict())
+    #action_selector_cfg["class"] = experiment_info.action_selector
+    class_selector_cfg["_target_"] = experiment_info.class_selector
+    class_selector_cfg["use_cuda"] = use_cuda
+    class_selector_cfg.class_dim = experiment_info.env.class_dim
+    class_selector = hydra.utils.instantiate(class_selector_cfg)
+    return class_selector

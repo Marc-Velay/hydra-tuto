@@ -4,8 +4,9 @@ os.environ['HYDRA_FULL_ERROR'] = '1'
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
+from datetime import datetime
 
-#from utils.builders import build_model
+from utils.builders import build_model
 
 """
  Usage: 
@@ -15,8 +16,10 @@ from omegaconf import DictConfig, OmegaConf
 """
 @hydra.main(config_path='configs', config_name="config")
 def runExperiment(cfg: DictConfig):
+    time_info = datetime.now()
     print(OmegaConf.to_yaml(cfg))
-    #model = build_model(**cfg)
+    model = build_model(time_info.strftime("%Y-%m-%d/%H-%M-%S/"), **cfg)
+    print("Model Built!")
     #model.train()
 
 if __name__ == "__main__":

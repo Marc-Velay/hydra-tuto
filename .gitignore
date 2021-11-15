@@ -144,3 +144,4 @@ save_*/
 outputs/
 multirun/
 data/
+.vscode

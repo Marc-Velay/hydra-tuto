@@ -6,7 +6,7 @@ from typing import Tuple
 from omegaconf import DictConfig
 import torch
 
-from models.base import BaseModel
+from compute_models.base import BaseModel
 
 
 class LearnerBase(ABC):

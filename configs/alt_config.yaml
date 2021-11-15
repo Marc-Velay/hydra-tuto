@@ -1,4 +1,5 @@
 # @package _global_
 defaults:
-  - models: MLP
+  - models: Deeper_MLP
   - hyperparameters: MLP_HP
+
